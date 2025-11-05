@@ -1,0 +1,3 @@
+api_settings:
+  analytics_url: "http://api.analytics.io/v1/log"
+  request_timeout_seconds: 1.5

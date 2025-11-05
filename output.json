@@ -1,0 +1,74 @@
+[
+  {
+    "file": "config.yaml",
+    "line": 3,
+    "risk_category": "Premature Read Timeout",
+    "description": "request_timeout_seconds set to 1.5s is far too aggressive for typical external APIs; causes premature failures on any response slower than 1.5s even if the API is working correctly.",
+    "remediation_recommendation": "Increase request_timeout_seconds to at least 3.0-5.0s in config.yaml (e.g., 'request_timeout_seconds: 5.0'). For typical external APIs, read timeouts should allow 3-10 seconds. Consider making this configurable per environment.",
+    "confidence_score": 0.99
+  },
+  {
+    "file": "app.py",
+    "line": 18,
+    "risk_category": "Missing Retry Logic",
+    "description": "requests.post() with timeout=(5.0, TIMEOUT) lacks retry mechanism for transient ReadTimeout errors. A single slow response fails the entire operation instead of retrying.",
+    "remediation_recommendation": "Wrap the requests.post() call in a retry loop with exponential backoff or simple linear backoff (e.g., 2-3 attempts with time.sleep()). Classify ReadTimeout as 'retryable' but HTTPError 5xx as 'non-retryable' to avoid infinite retry loops on server errors.",
+    "confidence_score": 0.95
+  },
+  {
+    "file": "app.py",
+    "line": 18,
+    "risk_category": "Unsafe Timeout Tuple Usage",
+    "description": "timeout=(5.0, TIMEOUT) specifies (connect_timeout, read_timeout). The read_timeout comes from config (1.5s), making it too aggressive. The connect_timeout of 5.0s is reasonable but isolated from the aggressive read_timeout.",
+    "remediation_recommendation": "Use timeout=(5.0, 5.0) or similar for both connect and read, or extract both from config. Ensure both are in the 3-10 second range for external APIs. Document that timeout=(connect, read) to prevent confusion.",
+    "confidence_score": 0.90
+  },
+  {
+    "file": "app.py",
+    "line": 19,
+    "risk_category": "Unhandled HTTP Status Errors",
+    "description": "response.raise_for_status() on line 19 converts HTTP 4xx/5xx responses to HTTPError exceptions. These are caught generically as RequestException but should be handled separately because 5xx errors may warrant retry while 4xx errors typically should not.",
+    "remediation_recommendation": "Split exception handling: catch HTTPError separately and check status_code (4xx: fail fast; 5xx: retry if transient). Example: 'if e.response.status_code >= 500: retry_or_backoff()' vs 'else: fail_fast()'.",
+    "confidence_score": 0.85
+  },
+  {
+    "file": "app.py",
+    "line": 27,
+    "risk_category": "Missing Retry Classification",
+    "description": "The except clause catches all RequestException types uniformly. ReadTimeout (transient, retryable) is handled the same as ConnectionError (may be persistent) or HTTPError (status-code-dependent).",
+    "remediation_recommendation": "Differentiate exception types: 'except requests.exceptions.Timeout/ReadTimeout' (retryable), 'except requests.exceptions.ConnectionError' (check circuit breaker), 'except requests.exceptions.HTTPError' (check status code). Log the exception type for observability.",
+    "confidence_score": 0.80
+  },
+  {
+    "file": "app.py",
+    "line": 30,
+    "risk_category": "Config Loading Not Resilient",
+    "description": "YAML config loading (lines 6-8) has a try/except that falls back to empty dict, but the actual timeout value comes from config without validation. If config.yaml is corrupted or missing, app silently falls back to default 3.0s, which may mask configuration problems.",
+    "remediation_recommendation": "Log config loading errors explicitly (e.g., logging.warning(f'Config load failed: {e}; using defaults')). Add schema validation (e.g., pydantic or jsonschema) to ensure request_timeout_seconds is a valid float >= 1.0 and <= 30.0.",
+    "confidence_score": 0.75
+  },
+  {
+    "file": "app.py",
+    "line": 30,
+    "risk_category": "Cascading Failure (Design Pattern)",
+    "description": "Although not directly chained, if log_event() is called from a larger orchestration, its immediate failure on timeout will cascade. No fallback or graceful degradation is provided.",
+    "remediation_recommendation": "Consider implementing a circuit breaker or bulkhead pattern: if analytics API fails 3 times in 10 seconds, switch to 'log locally' mode or queue events for later retry. Use libraries like pybreaker or tenacity for easy integration.",
+    "confidence_score": 0.70
+  },
+  {
+    "file": "app.py",
+    "line": 32,
+    "risk_category": "log_event_with_fix Has Incomplete Error Handling",
+    "description": "The fixed function retries on ReadTimeout but still may raise after max retries. Callers are not protected from unhandled exceptions if retries exhaust. No fallback or queue mechanism.",
+    "remediation_recommendation": "Add final except clause to catch any unhandled exception and return graceful error dict instead of raising. Consider adding persistent queue: 'except: queue.put(event_data); return {\"status\": \"queued\"}'.",
+    "confidence_score": 0.78
+  },
+  {
+    "file": "app.py",
+    "line": 33,
+    "risk_category": "Hardcoded URL in Fixed Function",
+    "description": "log_event_with_fix() uses hardcoded 'http://httpbin.org/delay/2' URL for demo purposes. This is not production-ready and should use the same ANALYTICS_URL config.",
+    "remediation_recommendation": "Replace hardcoded URL with ANALYTICS_URL and make the function accept event_data and optional url parameter. Example: 'def log_event_with_fix(event_data, url=None): url = url or ANALYTICS_URL'.",
+    "confidence_score": 0.88
+  }
+]
