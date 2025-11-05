@@ -1,0 +1,26 @@
+[
+  {
+    "file": "app.py",
+    "line": 18,
+    "risk_category": "Premature Read Timeout",
+    "description": "Aggressive read timeout from configuration causes premature failures for slightly slow but healthy APIs.",
+    "remediation_recommendation": "Increase `request_timeout_seconds` to 3.0-5.0s and add retry/backoff for ReadTimeouts using a limited retry loop.",
+    "confidence_score": 0.99
+  },
+  {
+    "file": "app.py",
+    "line": 40,
+    "risk_category": "Missing Retry/Backoff",
+    "description": "No retry/backoff in the vulnerable path leads to transient failures becoming user-visible errors.",
+    "remediation_recommendation": "Use a limited retry with exponential backoff for read timeouts; avoid retrying on ConnectionError and handle HTTP errors separately.",
+    "confidence_score": 0.95
+  },
+  {
+    "file": "app.py",
+    "line": 90,
+    "risk_category": "Cascading API Failure",
+    "description": "Chained calls without failure isolation cause downstream calls to fail when upstream is slow or unavailable.",
+    "remediation_recommendation": "Isolate upstream failures with fallbacks, circuit breakers, or continue-on-failure for non-critical downstream tasks.",
+    "confidence_score": 0.9
+  }
+]

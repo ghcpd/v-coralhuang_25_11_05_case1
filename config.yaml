@@ -1,0 +1,7 @@
+api_settings:
+  analytics_url: "http://api.analytics.io/v1/log"
+  secondary_url: "http://secondary.service/notify"
+  # Original (aggressive) timeout: 1.5
+  request_timeout_seconds: 1.5
+  # Recommended safe range: 3.0-5.0
+  recommended_read_timeout_seconds: 3.0
