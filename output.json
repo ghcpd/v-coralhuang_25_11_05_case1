@@ -1,0 +1,26 @@
+[
+  {
+    "file": "app.py",
+    "line": 18,
+    "risk_category": "Premature Read Timeout",
+    "description": "The API call in log_event uses a very small read timeout (1.5s) which may prematurely abort valid requests.",
+    "remediation_recommendation": "Increase the read timeout to 3-5 seconds and implement retry logic with exponential backoff for ReadTimeout errors.",
+    "confidence_score": 0.99
+  },
+  {
+    "file": "app.py",
+    "line": 39,
+    "risk_category": "Missing Retry for Transient Errors",
+    "description": "The code does not attempt to retry transient ReadTimeouts, causing requests to fail immediately.",
+    "remediation_recommendation": "Add a retry loop which retries on ReadTimeout (and optionally 5xx HTTP errors) with backoff.",
+    "confidence_score": 0.97
+  },
+  {
+    "file": "app.py",
+    "line": 80,
+    "risk_category": "Cascading API Failure",
+    "description": "Chained API calls lack isolation; an upstream failure causes downstream calls to also fail.",
+    "remediation_recommendation": "Implement fallbacks, timeouts, or a circuit breaker to isolate upstream failures and prevent full cascade.",
+    "confidence_score": 0.95
+  }
+]
