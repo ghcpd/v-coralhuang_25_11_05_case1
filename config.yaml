@@ -1,0 +1,6 @@
+api_settings:
+  analytics_url: "http://api.analytics.io/v1/log"
+  request_timeout_seconds: 3.0
+  connect_timeout_seconds: 5.0
+  max_retries: 3
+  backoff_factor: 1.0
