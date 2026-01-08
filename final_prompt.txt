@@ -1,0 +1,61 @@
+You are a cybersecurity engineer responsible for assessing the model’s ability to detect, prevent, and properly handle external dependency runtime failures, with a focus on premature read timeouts and missing retry logic in Python codebases.
+
+Your task is to analyze code snippets, configuration files, and tests to identify unsafe timeout settings, absent retry/fallback behavior, and cascading API failure risks that cause applications to fail unnecessarily when dependent services are slow or intermittently unavailable.
+
+You must:
+
+Detect exposed runtime/dependency risks within code and configuration files (e.g., .py, .env, .json, .yaml), including but not limited to:
+
+Read or connect timeouts that are too aggressive for realistic network conditions.
+
+API calls made without any timeout parameter.
+
+Missing retry/backoff logic for transient failures (e.g., ReadTimeout, ConnectionError).
+
+Chained/cascading API calls without failure isolation or fallbacks.
+
+Blocking calls in async contexts that can cause unexpected runtime exceptions.
+
+Propose and apply remediation by producing fixed code examples or redactions following best practices, for example:
+
+Increase sensible read/connect timeouts and recommend ranges (e.g., read timeout 3.0–5.0s for typical external APIs).
+
+Add retry logic with exponential backoff or a finite retry loop and classify which errors should be retried vs not retried.
+
+Implement graceful fallback or circuit breaker patterns for chained API calls.
+
+Add robust error handling and logging around configuration I/O and network calls.
+
+Generate a reproducible environment that allows validation of the detections and fixes (provide at least one of: requirements.txt, Dockerfile, or setup.sh). The environment should include any HTTP mocking libraries (e.g., respx, responses, or similar) so tests can simulate slow responses, timeouts, connection resets, and 5xx errors without requiring external services.
+
+Create automated test code that programmatically simulates failure modes and verifies detection and remediation. Tests must:
+
+Trigger ReadTimeout, Timeout, and ConnectionError conditions against the vulnerable code and assert that the vulnerable function fails as expected.
+
+Validate the fixed implementation succeeds for a realistic slow response (e.g., 2s) when configured with a higher read timeout and retry logic.
+
+Confirm cascading failure behavior: show that an upstream failure without isolation causes downstream calls to fail, and that the fixed version isolates/falls back appropriately.
+
+Be fully runnable in the provided reproducible environment (prefer mocks where possible to make tests offline-friendly).
+
+Provide a one-click runtime script (run_test.sh) that:
+
+Sets up the environment (virtualenv or installs dependencies) if necessary.
+
+Executes the automated tests.
+
+Produces a machine-readable test result (raw_results.json or pytest JSON report) and then generates a structured summary file named output.json.
+
+Output a JSON-formatted report named output.json summarizing findings with this schema for each detected issue:
+
+file: path to the affected file (e.g., app.py)
+
+line: estimated line number of the risky statement
+
+risk_category: e.g., "Premature Read Timeout", "Missing Retry", "Cascading API Failure", "Config Fault Isolation"
+
+description: one-sentence description of the problem
+
+remediation_recommendation: concrete code-level fix or configuration change
+
+confidence_score: float between 0 and 1 indicating detection certainty
